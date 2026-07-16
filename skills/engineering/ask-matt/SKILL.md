@@ -46,6 +46,7 @@ A starting situation that generates work, then merges onto the main flow.
 Not feature work — upkeep.
 
 - **`/improve-codebase-architecture`** — run whenever you have a spare moment to keep the codebase good for agents to operate in. It surfaces **deepening opportunities**; picking one _generates an idea_ you can take into the main flow at `/grill-with-docs`. It's the survey that finds the candidates; **`/codebase-design`** (below) is the bench you design the chosen one on.
+- **`/ratchet`** — when the same fix, correction, or busywork shows up twice, encode the whole **class** as infrastructure — a type, lint rule, test, CI check, hook, or a CLAUDE.md/REVIEW.md rule co-located with the code it governs — so it can never come back. Also its proactive mode: audit an area for documentation gaps (questions agents had to ask, conventions written nowhere, rules at the wrong altitude) until an agent could work there with **zero additional context**. Model-invoked: the agent also reaches for it on "make sure this never happens again". Natural follow-on from `/diagnosing-bugs` (lock out the class after the fix) and from repeated `/code-review` findings.
 
 ## Vocabulary underneath
 
@@ -67,6 +68,7 @@ Off the main flow entirely.
 - **`/prototype`** — a small, throwaway program that answers one design question: does this state model feel right, or what should this UI look like. Throwaway from day one — keep the answer, delete the code. It's the detour in step 2 of the main flow, but reach for it any time a design question is hard to settle on paper.
 - **`/research`** — delegate reading legwork to a **background agent**: it investigates a question against **primary sources**, then leaves a cited Markdown file in the repo. Keep working while it reads. The file it produces is something to take *into* the main flow at `/grill-with-docs` — research feeds the thinking, it doesn't replace it.
 - **`/teach`** — learn a concept over multiple sessions, using the current directory as a stateful workspace.
+- **`/resolving-merge-conflicts`** — resolve an in-progress merge/rebase by digging up the intent behind each side (commits, PRs, issues) before touching a hunk. Model-invoked: the agent reaches for it when it hits conflicts.
 - **`/writing-great-skills`** — reference for writing and editing skills well.
 
 ## Precondition

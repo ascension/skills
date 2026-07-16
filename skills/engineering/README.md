@@ -13,6 +13,7 @@ Reachable only when you type them (`disable-model-invocation: true`).
 - **[setup-matt-pocock-skills](./setup-matt-pocock-skills/SKILL.md)** — Configure this repo for the engineering skills (issue tracker, triage labels, domain doc layout). Run once per repo.
 - **[to-issues](./to-issues/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable issues using vertical slices.
 - **[to-prd](./to-prd/SKILL.md)** — Turn the current conversation into a PRD and publish it to the issue tracker.
+- **[implement](./implement/SKILL.md)** — Implement a PRD or set of issues end-to-end: drives `/tdd` at pre-agreed seams, typechecks and tests along the way, then closes out with `/code-review` before committing.
 
 ## Model-invoked
 
@@ -26,3 +27,5 @@ Model- or user-reachable (rich trigger phrasing so the model can reach for them)
 - **[domain-modeling](./domain-modeling/SKILL.md)** — Actively build and sharpen a project's domain model — challenge terms, stress-test with scenarios, update `CONTEXT.md` and ADRs inline.
 - **[codebase-design](./codebase-design/SKILL.md)** — Shared discipline and vocabulary for designing deep modules: small interfaces, clean seams, testable through the interface.
 - **[code-review](./code-review/SKILL.md)** — Two-axis review of the diff since a fixed point: **Standards** (does it follow the repo's coding standards, plus a Fowler smell baseline?) and **Spec** (does it faithfully implement the originating issue/PRD?), run as parallel sub-agents.
+- **[ratchet](./ratchet/SKILL.md)** — Encode a repeated fix, correction, or piece of head-knowledge as infrastructure — a type, lint rule, test, CI check, hook, or a CLAUDE.md/REVIEW.md rule co-located with the code it governs — so the whole class of issue can never come back and agents work with zero additional context.
+- **[resolving-merge-conflicts](./resolving-merge-conflicts/SKILL.md)** — Resolve an in-progress merge/rebase by digging up the intent behind each side (commits, PRs, issues), preserving both where possible, then running the project's checks and finishing the merge.

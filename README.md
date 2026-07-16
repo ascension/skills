@@ -135,6 +135,16 @@ This is built in to every layer of these skills:
 
 And crucially, [`/improve-codebase-architecture`](./skills/engineering/improve-codebase-architecture/SKILL.md) helps you rescue a codebase that has become a ball of mud. I recommend running it on your codebase once every few days.
 
+### #5: The Agent Keeps Making The Same Mistake
+
+> "Every team should be writing the CLAUDE.md's, REVIEW.md's, skills, and docs that enable agents to productively work in their codebase with zero additional context from the prompter."
+>
+> [Boris Cherny](https://x.com/bcherny), creator of Claude Code
+
+**The Problem**: You correct the agent, and next session it makes the same mistake again. The knowledge lives in your head — or in one long-gone conversation — so you pay for it in tokens and corrections every single time. The best engineers have always fixed this class of problem with automation: lint rules, tests, CI. Agents raise the stakes twice over — every rule you encode speeds up every future session, and the knowledge that can now be encoded goes beyond lint rules and types to CLAUDE.md rules, REVIEW.md checklists, and skills.
+
+**The Fix**: [`/ratchet`](./skills/engineering/ratchet/SKILL.md). When the same fix, correction, or busywork shows up twice, it encodes the whole class as infrastructure — a type, lint rule, test, CI check, hook, or a CLAUDE.md/REVIEW.md rule co-located with the code it governs — then proves the mechanism catches the original mistake. A ratchet turns one way: once it clicks, that class of issue can never come back. It can also audit an area for documentation gaps until an agent could work there with zero additional context.
+
 ### Summary
 
 Software engineering fundamentals matter more than ever. These skills are my best effort at condensing these fundamentals into repeatable practices, to help you ship the best apps of your career. Enjoy.
@@ -156,6 +166,7 @@ Skills I use daily for code work.
 - **[setup-matt-pocock-skills](./skills/engineering/setup-matt-pocock-skills/SKILL.md)** — Configure this repo for the engineering skills (issue tracker, triage labels, domain doc layout). Run once per repo before using the other engineering skills.
 - **[to-issues](./skills/engineering/to-issues/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable issues using vertical slices.
 - **[to-prd](./skills/engineering/to-prd/SKILL.md)** — Turn the current conversation into a PRD and publish it to the issue tracker. No interview — just synthesizes what you've already discussed.
+- **[implement](./skills/engineering/implement/SKILL.md)** — Implement a PRD or set of issues end-to-end: drives `/tdd` at pre-agreed seams, typechecks and tests along the way, then closes out with `/code-review` before committing.
 
 **Model-invoked**
 
@@ -166,6 +177,8 @@ Skills I use daily for code work.
 - **[domain-modeling](./skills/engineering/domain-modeling/SKILL.md)** — Actively build and sharpen a project's domain model — challenge terms against the glossary, stress-test with edge-case scenarios, and update `CONTEXT.md` and ADRs inline.
 - **[codebase-design](./skills/engineering/codebase-design/SKILL.md)** — Shared discipline and vocabulary for designing deep modules: a lot of behaviour behind a small interface, placed at a clean seam, testable through that interface.
 - **[code-review](./skills/engineering/code-review/SKILL.md)** — Two-axis review of the diff since a fixed point: **Standards** (does it follow the repo's coding standards, plus a Fowler smell baseline?) and **Spec** (does it faithfully implement the originating issue/PRD?), run as parallel sub-agents so neither pollutes the other.
+- **[ratchet](./skills/engineering/ratchet/SKILL.md)** — Encode a repeated fix, correction, or piece of head-knowledge as infrastructure — a type, lint rule, test, CI check, hook, or a CLAUDE.md/REVIEW.md rule co-located with the code it governs — so the whole class of issue can never come back and agents work with zero additional context.
+- **[resolving-merge-conflicts](./skills/engineering/resolving-merge-conflicts/SKILL.md)** — Resolve an in-progress merge/rebase by digging up the intent behind each side (commits, PRs, issues), preserving both where possible, then running the project's checks and finishing the merge.
 
 ### Productivity
 

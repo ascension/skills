@@ -53,7 +53,7 @@ Fetch fresh PR state for the current head SHA: mergeability, base freshness, che
 
 Put every blocker in exactly one state:
 
-- **FIX** — base drift, a reproducible conflict, a failing check, or a valid finding introduced by this PR.
+- **FIX** — draft state after the baseline, base drift, a reproducible conflict, a failing check, or a valid finding introduced by this PR.
 - **RESPOND** — false positive, already fixed item, or deliberate tradeoff that needs an evidence-backed reply.
 - **WAIT** — an in-progress check or requested review/approval with no agent action available.
 - **ESCALATE** — missing permission, no eligible reviewer, persistent external outage, or product decision the agent cannot safely make.
@@ -64,9 +64,10 @@ Put every blocker in exactly one state:
 Work every FIX and RESPOND item before waiting:
 
 - Verify each comment against the current diff. Fix confirmed issues minimally; explain false positives or scope decisions with code/test evidence.
+- If the quality baseline passed while the PR is draft, mark it ready for review and observe again.
 - If the base advanced, return to step 3 to sync it and re-establish the quality baseline.
 - Inspect failing-check logs and reproduce failures locally. Retry only when evidence indicates infrastructure or flakiness; an unexplained red check remains a blocker.
-- After any code or base-sync change, rerun affected local checks and `/code-review`, commit coherently, push, and record the new head SHA. That push invalidates prior check and review evidence; begin OBSERVE again.
+- After any code change, rerun affected local checks and `/code-review`, commit coherently, push, and record the new head SHA. That push invalidates prior check and review evidence; begin OBSERVE again.
 - Reply with the fixing commit SHA. Resolve a thread only after its fix is pushed or its reviewer accepts the disposition; leave genuine disagreement visible.
 
 ### POLL

@@ -1,0 +1,3 @@
+interface:
+  display_name: "Land PR"
+  short_description: "Monitor a PR through quality-gated merge"

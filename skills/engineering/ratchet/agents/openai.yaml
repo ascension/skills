@@ -1,0 +1,3 @@
+interface:
+  display_name: "Ratchet"
+  short_description: "Encode repeated fixes as infrastructure"

@@ -1,63 +1,92 @@
 ---
 name: land-pr
-description: Land a stalled or forgotten pull request — confirm it isn't stale or already superseded, resolve merge conflicts, clear every open review thread and red check, then merge. Use when the user wants to get a PR across the line, revive an old/forgotten PR, or resolve a PR's merge conflicts.
+description: "Land a pull request through a quality-gated polling loop: confirm it is still wanted, keep its branch current, resolve verified feedback and failing checks, and merge only when the reviewed head is fully green. Use when the user asks to get a PR across the line, revive an old PR, or monitor a newly opened PR through merge."
 ---
 
 # Land PR
 
-Drive one pull request from open-with-problems to merged. The work splits into two questions, in order: **should** this land (is it still wanted, or has it gone **stale** — already **superseded** by a later merge?), and only then **can** it land (conflicts resolved, every thread closed, checks **green**). Answer them out of order and you risk pouring conflict-resolution effort into a PR that should just be closed.
+Run a **landing loop** until one pull request is merged or reaches a blocker only a human can clear. Automation removes waiting and repetition; every code change still earns its way through review and verification.
 
-## 1. Identify the PR
+## 1. Pin the pull request
 
-Resolve the PR from a user-supplied number, the current branch (`gh pr view --json number,headRefName,baseRefName,state,mergeable,isDraft`), or ask once if ambiguous.
+Resolve the PR from a supplied number or the current branch. Capture its URL, head and base branches, head SHA, title/body, linked issue, age, commits, changed files, draft state, reviews, unresolved threads, and checks.
 
-Pull its full picture in one go: title and body, linked issue, base branch, age (`createdAt`), commits (`gh pr view <n> --json commits`), changed files, review threads, and check runs (`gh pr checks <n>`).
+Read the repository's contribution rules, branch protection, required commands, merge method, and reviewer conventions. Treat invoking this skill as authorization to update and merge this PR, not to widen its feature scope.
 
-**Done when:** you hold the PR number, base branch, the linked issue (or have confirmed there is none), and the list of files it touches.
+**Complete when:** the PR, its intended outcome, its exact head SHA, and its landing requirements are known.
 
-## 2. Stale check — should this land?
+## 2. Decide whether it should land
 
-The gate. An old PR is guilty until proven live: a forgotten branch is often already **superseded**. Investigate before touching code:
+For newly opened work, the user's current request establishes intent. For an old or forgotten PR, investigate before editing:
 
-- **Linked issue** — still open? A closed issue usually means the need was met elsewhere.
-- **Superseded by base** — checkout the base branch and look for the PR's feature already present. `git log <base> --since=<PR createdAt> -- <changed files>` surfaces later merges to the same files; read them. If the base already does what this PR does, it's superseded.
-- **Superseded by a sibling** — search other merged/open PRs for the same feature (`gh pr list --search`). Two branches solving one problem is the classic forgotten-PR trap.
-- **Still wanted** — if the feature is ambiguous or the codebase has moved on, the change may simply be obsolete.
+- Is its linked issue still open and its outcome still wanted?
+- Does the base branch already contain the behavior? Inspect later commits touching the same files.
+- Has another open or merged PR superseded it?
 
-Return one **verdict**:
+Choose one verdict:
 
-- **LAND** — still wanted, not superseded → continue to step 3.
-- **CLOSE** — superseded or obsolete → stop. Recommend closing with a one-line reason and a pointer to what superseded it. Do not resolve conflicts on a dead PR.
-- **ASK** — genuinely unclear whether it's still wanted → surface the evidence and ask the user before spending effort.
+- **LAND** — wanted and not superseded; continue.
+- **CLOSE** — obsolete or superseded; stop with the evidence and proposed closing note. Close only when authorized.
+- **ASK** — product intent is genuinely ambiguous; surface the decision and stop before changing code.
 
-**Done when:** you have stated LAND, CLOSE, or ASK with the evidence that decided it. On CLOSE or ASK, the skill ends here.
+**Complete when:** LAND is supported by evidence, or the run ends with CLOSE/ASK.
 
-## 3. Sync the branch & resolve conflicts
+## 3. Establish the quality baseline
 
-Bring the branch up to its base and clear conflicts so it merges clean.
+Fetch the remote and update the PR branch from its base using the repository's history convention. Rebase only when rewriting this branch is safe; use `--force-with-lease` for a rewritten remote branch. For conflicts, invoke `/resolving-merge-conflicts` so both sides' intent is preserved.
 
-- Update base (`git fetch origin`), then rebase the PR branch onto it (`git rebase origin/<base>`), or merge base in if the repo's history style or a shared/long-lived branch calls for it — match the repo's convention.
-- Resolve each conflict **faithfully**: preserve the PR's intent *and* the base's newer changes. A conflict often means the base changed the very thing this PR touches — understand both sides before choosing; never blindly keep one side.
-- After resolving, run the repo's build, typecheck, and tests. Conflict resolution that compiles can still be wrong — the tests are the check.
+Run the repository's required local checks. Then invoke `/code-review` against the base branch and resolve every must-fix Standards or Spec finding. Keep changes inside the PR's intended outcome.
 
-**Done when:** the branch contains every base commit, no conflict markers remain, and build + typecheck + tests are **green**.
+Commit coherent fixes and push only after the affected checks pass. Record the pushed head SHA; all later review and merge evidence belongs to that SHA.
 
-## 4. Clear all feedback
+**Complete when:** the remote head contains the current base, the final diff has no known must-fix internal-review finding, and required local checks pass at the recorded SHA.
 
-Every open review thread and red check is a blocker. Gather them all — bot and human review comments, review summaries, and failing checks (`gh pr checks <n>`).
+## 4. Run the landing loop
 
-Verify and act on each with the same rigor as **`review-pr-comments`** (verify the issue in the real code, then fix / skip / defer with a reason) — follow that skill rather than re-deriving it. For an unattended polling loop instead of one pass, that's **`watch-pr-comments`**.
+Repeat **OBSERVE → CLASSIFY → ACT → POLL**. Default to a 60-second poll while checks or reviews are pending, adjusting only for provider limits. Elapsed time and a quiet poll are never completion criteria.
 
-**Done when:** every review thread has a disposition (fixed with the commit, or skipped/deferred with a stated reason), no must-fix item is open, and all checks are green. Push the fixes.
+### OBSERVE
 
-## 5. Land it
+Fetch fresh PR state for the current head SHA: mergeability, base freshness, check runs and logs, review decision, new reviews/comments, and every unresolved thread. Paginate; a partial comment list is not evidence of a clean PR.
 
-Confirm the end state is genuinely mergeable: `gh pr view <n> --json mergeable,reviewDecision,state` reports mergeable, required approvals satisfied, checks green, branch current with base.
+### CLASSIFY
 
-Merge per the repo's convention (squash/merge/rebase). If branch-protection requires a human approval the agent can't supply, stop and surface that the PR is ready and what's needed — that's the one blocker the skill can't clear itself.
+Put every blocker in exactly one state:
 
-**Done when:** the PR is merged, or you've reported it green-and-ready with the exact remaining human step.
+- **FIX** — a reproducible conflict, failing check, or valid finding introduced by this PR.
+- **RESPOND** — false positive, already fixed item, or deliberate tradeoff that needs an evidence-backed reply.
+- **WAIT** — an in-progress check or requested review/approval with no agent action available.
+- **ESCALATE** — missing permission, no eligible reviewer, persistent external outage, or product decision the agent cannot safely make.
+- **TERMINAL** — merged, closed, or proven superseded.
+
+### ACT
+
+Work every FIX and RESPOND item before waiting:
+
+- Verify each comment against the current diff. Fix confirmed issues minimally; explain false positives or scope decisions with code/test evidence.
+- Inspect failing-check logs and reproduce failures locally. Retry only when evidence indicates infrastructure or flakiness; an unexplained red check remains a blocker.
+- After any code change, rerun affected local checks and `/code-review`, commit coherently, push, and record the new head SHA. That push invalidates prior check and review evidence; begin OBSERVE again.
+- Reply with the fixing commit SHA. Resolve a thread only after its fix is pushed or its reviewer accepts the disposition; leave genuine disagreement visible.
+
+### POLL
+
+If only WAIT items remain, wait and observe again. Request required reviewers through repository conventions when none are assigned. ESCALATE only when continued polling cannot change the state; report the exact human action needed. If the runtime must end, leave a checkpoint containing the PR URL, head SHA, completed evidence, blockers, and next poll action rather than declaring success.
+
+**Complete when:** a fresh observation of one unchanged head SHA has no FIX, RESPOND, WAIT, or ESCALATE items and satisfies the merge gate.
+
+## 5. Pass the merge gate
+
+Merge only when all of these are true for the same head SHA:
+
+- The PR is open, ready for review, mergeable, and current with base.
+- Required approvals are present, no changes are requested, and no actionable thread is unresolved.
+- Every required check passes and no other check is red; skipped or cancelled checks have an evidence-backed disposition consistent with repository policy.
+- Required local checks pass and the final `/code-review` has no must-fix finding on this SHA.
+
+Immediately re-fetch the PR, head SHA, base state, reviews, threads, and checks. Any change returns to the landing loop. Otherwise merge with the repository's configured method, then verify the server reports the PR merged.
+
+**Complete when:** the PR is verified merged. A human-only blocker is a checkpoint, not a successful landing.
 
 ## Report
 
-Close with: the stale-check verdict and why; what was rebased/conflicts resolved; each feedback item and its disposition; and the final outcome (merged, or ready + blocker).
+Report the LAND/CLOSE/ASK evidence, branch updates, internal review and local checks, each external feedback disposition, polling outcome, and final merge commit or exact human blocker.

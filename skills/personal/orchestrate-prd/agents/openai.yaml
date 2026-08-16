@@ -1,0 +1,5 @@
+interface:
+  display_name: "Orchestrate PRD"
+  short_description: "AFK relay for an approved PRD ticket graph"
+policy:
+  allow_implicit_invocation: false

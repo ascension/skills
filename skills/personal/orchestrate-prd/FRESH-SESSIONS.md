@@ -2,6 +2,8 @@
 
 Use this reference at launcher selection and when constructing a relay packet. Read the capability gate, only the chosen launcher section, and only the packet section for the current leg. Re-check installed model IDs and command syntax from local `--help` or `--list-models`; the environment is their source of truth.
 
+`$name` is Codex skill invocation. It is the same skill as `/name` on Claude or Cursor and `/skill:name` on Pi. `$code-review` maps to `/code-review`; `$implement` maps to `/implement`; `$tdd` maps to `/tdd`. Use the prefix the selected runner requires. Do not treat a `$` form as a different skill.
+
 ## Capability gate
 
 Every relay leg must have:
@@ -74,7 +76,7 @@ Pi qualifies for implementation only when an installed extension supplies the su
 
 ## Implementation or fix packet
 
-The first line must explicitly invoke the runtime's installed `implement` skill (`/implement`, `$implement`, or Pi's `/skill:implement`, as required by the runtime). Then provide only:
+The first line must explicitly invoke the runtime's installed `implement` skill with that runner's prefix (`/implement`, `$implement`, or `/skill:implement`). Then provide only:
 
 ```text
 TASK: <ticket or finding ref>
@@ -131,7 +133,7 @@ Verification passes only when the observed SHA matches, every command exits succ
 
 ## Aggregate review packet
 
-The first line explicitly invokes the installed `code-review` skill with the pinned merge-base SHA, using the runtime's explicit skill syntax. Then provide:
+The first line explicitly invokes the installed `code-review` skill with the pinned merge-base SHA, using that runner's prefix (`/code-review`, `$code-review`, or `/skill:code-review`). Then provide:
 
 ```text
 PR: <URL>

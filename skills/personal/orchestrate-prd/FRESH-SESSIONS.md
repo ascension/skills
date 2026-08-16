@@ -55,8 +55,10 @@ Use a fresh underlying command such as one of these, after verifying its local h
 ```text
 claude -p --no-session-persistence --model opus --add-dir <control-dir> <packet>
 codex exec --ephemeral -m gpt-5.6-sol -C <worktree> --add-dir <control-dir> <packet>
-cursor-agent -p --model <current-grok-4.6-id> --workspace <worktree> --add-dir <control-dir> --trust <packet>
+cursor-agent -p --trust --workspace <worktree> --add-dir <control-dir> --model cursor-grok-4.6-high <packet>
 ```
+
+If `pi` or `codex` returns a usage-limit, no-credits, or billing error for GPT/Codex, do not stop. Resolve the current Cursor Grok 4.6 id from `cursor-agent --list-models` and continue on that runner. `pi --model cursor/grok-4.6` is not a working host path; Cursor Grok is `cursor-agent`.
 
 Confirm that the chosen runtime can see the Matt skills and create subagents. A Herdr terminal wrapped around a resumed agent is still a resumed context.
 

@@ -1,6 +1,6 @@
 ---
 name: land-pr
-description: "Land a pull request through a quality-gated polling loop: confirm it is still wanted, keep its branch current, resolve verified feedback and failing checks, and merge only when the reviewed head is fully green. Use when the user asks to get a PR across the line, revive an old PR, or monitor a newly opened PR through merge."
+description: "Land a pull request through a quality-gated polling loop: confirm it is still wanted, keep its branch current, run /code-review against the originating spec, resolve verified feedback and failing checks, and merge only when that reviewed head is fully green. Use when the user asks to get a PR across the line, revive an old PR, or monitor a newly opened PR through merge."
 ---
 
 # Land PR
@@ -35,11 +35,13 @@ Choose one verdict:
 
 Fetch the remote and update the PR branch from its base using the repository's history convention. Rebase only when rewriting this branch is safe; use `--force-with-lease` for a rewritten remote branch. For conflicts, invoke `/resolving-merge-conflicts` so both sides' intent is preserved.
 
-Run the repository's required local checks. Then invoke `/code-review` against the base branch and resolve every must-fix Standards or Spec finding. Keep changes inside the PR's intended outcome.
+Run the repository's required local checks. Then invoke `/code-review` against the base branch, passing the linked issue or PRD as the spec source, and resolve every must-fix Standards or Spec finding. Keep changes inside the PR's intended outcome.
+
+`/code-review` is the required review for landing. Consume external bot findings when they exist. A missing, skipped, or usage-limited bot review — Cursor Bugbot, Pi Code Review, or similar — is not part of this baseline.
 
 Commit coherent fixes and push only after the affected checks pass. Record the pushed head SHA; all later review and merge evidence belongs to that SHA.
 
-**Complete when:** the remote head contains the current base, the final diff has no known must-fix internal-review finding, and required local checks pass at the recorded SHA.
+**Complete when:** the remote head contains the current base, `/code-review` has no must-fix finding on that SHA, and required local checks pass at the recorded SHA.
 
 ## 4. Run the landing loop
 
@@ -55,7 +57,7 @@ Put every blocker in exactly one state:
 
 - **FIX** — draft state after the baseline, base drift, a reproducible conflict, a failing check, or a valid finding introduced by this PR.
 - **RESPOND** — false positive, already fixed item, or deliberate tradeoff that needs an evidence-backed reply.
-- **WAIT** — an in-progress check or requested review/approval with no agent action available.
+- **WAIT** — an in-progress required check or a requested human review/approval with no agent action available. A missing, skipped, or usage-limited external bot review is not WAIT.
 - **ESCALATE** — missing permission, no eligible reviewer, persistent external outage, or product decision the agent cannot safely make.
 - **TERMINAL** — merged, closed, or proven superseded.
 
@@ -63,7 +65,7 @@ Put every blocker in exactly one state:
 
 Work every FIX and RESPOND item before waiting:
 
-- Verify each comment against the current diff. Fix confirmed issues minimally; explain false positives or scope decisions with code/test evidence.
+- Verify each comment against the current diff. Fix confirmed issues minimally; explain false positives or scope decisions with code/test evidence. Consume bot findings that actually arrived; a bot that never started is not a blocker.
 - If the quality baseline passed while the PR is draft, mark it ready for review and observe again.
 - If the base advanced, return to step 3 to sync it and re-establish the quality baseline.
 - Inspect failing-check logs and reproduce failures locally. Retry only when evidence indicates infrastructure or flakiness; an unexplained red check remains a blocker.
@@ -81,9 +83,9 @@ TERMINAL ends the loop: verify and report an external merge, closure, or superse
 Merge only when all of these are true for the same head SHA:
 
 - The PR is open, ready for review, mergeable, and current with base.
-- Required approvals are present, no changes are requested, and no actionable thread is unresolved.
-- Every required check passes and no other check is red; skipped or cancelled checks have an evidence-backed disposition consistent with repository policy.
-- Required local checks pass and the final `/code-review` has no must-fix finding on this SHA.
+- Required human approvals are present, no changes are requested, and no actionable thread is unresolved.
+- Every required repository check passes and no other check is red; skipped or cancelled checks have an evidence-backed disposition consistent with repository policy. A missing, skipped, or usage-limited external bot review is not a required check.
+- Required local checks pass and `/code-review` against the base has no must-fix finding on this SHA. That two-axis report is the required review. If a repo readiness script fails only because Cursor Bugbot or Pi Code Review is absent, treat the `/code-review` report as the substitute and continue.
 
 Immediately re-fetch the PR, head SHA, base state, reviews, threads, and checks. Any change returns to the landing loop. Otherwise merge with the repository's configured method, then verify the server reports the PR merged.
 
@@ -91,4 +93,4 @@ Immediately re-fetch the PR, head SHA, base state, reviews, threads, and checks.
 
 ## Report
 
-Report the LAND/CLOSE/ASK evidence, branch updates, internal review and local checks, each external feedback disposition, polling outcome, and final merge commit or exact human blocker.
+Report the LAND/CLOSE/ASK evidence, branch updates, `/code-review` Standards and Spec dispositions, local checks, each external feedback disposition, polling outcome, and final merge commit or exact human blocker.

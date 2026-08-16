@@ -87,7 +87,7 @@ Off the main flow entirely.
 - **`/writing-for-agents`** — reference for writing documents agents consume: skills, AGENTS.md, pointed-at docs.
 - **`/orchestrate-prd`** — after `/to-tickets` has an approved graph, coordinate isolated implementation sessions, publish one draft PR, and close a bounded review/fix loop. Fork-local and personal rather than part of the promoted plugin.
 - **`/review-pr-comments`** — for a focused pass over automated PR feedback: verify each bot finding against the current diff, fix only confirmed issues, push targeted changes, and report every disposition. Fork-local and personal rather than part of the promoted plugin.
-- **`/land-pr`** — after a PR exists, keep its exact head in a quality-gated polling loop: sync the base, verify feedback, rerun checks and code review after every change, and merge only when the same SHA has cleared every gate. Fork-local and personal rather than part of the promoted plugin.
+- **`/land-pr`** — after a PR exists, keep its exact head in a quality-gated polling loop: sync the base, run `/code-review` against the originating spec, verify any bot findings that actually arrived, rerun checks after every change, and merge only when the same SHA has cleared every gate. Fork-local and personal rather than part of the promoted plugin.
 
 ## Precondition
 

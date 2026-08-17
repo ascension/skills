@@ -1,22 +1,43 @@
 # Fresh relay sessions
 
-Use this reference at launcher selection and when constructing a relay packet. Read the capability gate, only the chosen launcher section, and only the packet section for the current leg. Re-check installed model IDs and command syntax from local `--help` or `--list-models`; the environment is their source of truth.
+Use this reference when constructing a spawn intent and its packet. Read the capability gate, the spawn intent, and only the packet section for the current leg. Call the Skill tool with "dispatch" to deliver the intent. Re-check installed model IDs and command syntax from local `--help` or `--list-models`; the environment is their source of truth.
 
-`$name` is Codex skill invocation. It is the same skill as `/name` on Claude or Cursor and `/skill:name` on Pi. `$code-review` maps to `/code-review`; `$implement` maps to `/implement`; `$tdd` maps to `/tdd`. Use the prefix the selected runner requires. Do not treat a `$` form as a different skill.
+`$name` is Codex skill invocation. It is the same skill as `/name` on Claude or Cursor and `/skill:name` on Pi. `$code-review` maps to `/code-review`; `$implement` maps to `/implement`; `$tdd` maps to `/tdd`. Use the prefix the selected runner requires.
 
 ## Capability gate
 
 Every relay leg must have:
 
-- A new process, session ID, or subagent with no inherited turns and no resume, continue, or fork behavior.
-- An approved Claude Opus, Codex GPT-5.6-sol, or Cursor Grok 4.6 family model.
+- A **fresh session**: a new process, session ID, or subagent with no inherited turns and no resume, continue, or fork behavior.
+- A model the adapter resolved from **house rules** or an approved override, present in the host catalog.
 - The repository worktree and its `AGENTS.md` or `CLAUDE.md` instructions.
 - Read access to the ledger and manifest directory outside the worktree.
 - Explicit entry into every user-invoked skill governing that leg. Model discovery is insufficient for skills with `disable-model-invocation: true`.
 
-An implementation or fix leg must resolve `/implement`, `/tdd`, and `/code-review`, mutate files, run checks, and commit. A review leg must resolve `/code-review` and spawn its Standards and Spec subagents in parallel. Test the capability before the first mutation; select another launcher when any part is absent.
+An implementation or fix leg must resolve `/implement`, `/tdd`, and `/code-review`, mutate files, run checks, and commit. A review leg must resolve `/code-review` and spawn its Standards and Spec subagents in parallel. Test the capability before the first mutation; select another host when any part is absent.
 
 Give every leg a unique name containing the phase, task ID, and attempt. Run mutating legs sequentially in the integration worktree.
+
+## Spawn intent
+
+The control plane emits one of these per leg. Dispatch delivers it.
+
+```text
+name:      <phase>-<task-id>-<attempt>
+packet:    <body from the matching packet section>
+role:      implement | review | verify | recover | probe | rollover
+model:     <ledger row; adapter resolves the host string>
+effort:    medium | high | xhigh
+isolation: fresh
+wait:      idle | done | blocked
+adapter:   <optional pin: herdr | buzz | native | pi>
+issue:     <PRD or ticket number>
+branch:    <integration branch>
+work:      <short PRD title>
+cwd:       <integration worktree>
+```
+
+Dispatch returns a receipt. The control plane accepts receipts only.
 
 ## Capability probe packet
 
@@ -34,47 +55,7 @@ STANDARDS-PROBE plus HEAD; the other returns SPEC-PROBE plus HEAD. Read one
 manifest entry from CONTROL DIRECTORY. Return all evidence in one probe receipt.
 ```
 
-The probe passes only when the model is approved, all three skills resolve, both subagents return the expected HEAD from distinct contexts, the control directory is readable, and independent inspection confirms unchanged HEAD and a clean worktree.
-
-## Native isolated agents
-
-Use the harness's isolated-agent primitive with zero inherited turns (for example, `fork_turns: "none"`) and one packet. Select an approved model explicitly. A fresh agent with copied conversation history fails the gate.
-
-## Herdr
-
-Herdr supplies the observable terminal, not the model. Launch a fresh configured agent command:
-
-```text
-herdr agent start <leg-name> --cwd <worktree> -- <agent command and fresh-session flags>
-herdr agent wait <leg-name> --status idle --timeout <milliseconds>
-herdr agent read <leg-name> --source recent-unwrapped --lines <count>
-```
-
-Use a fresh underlying command such as one of these, after verifying its local help and model catalog:
-
-```text
-claude -p --no-session-persistence --model opus --add-dir <control-dir> <packet>
-codex exec --ephemeral -m gpt-5.6-sol -C <worktree> --add-dir <control-dir> <packet>
-cursor-agent -p --trust --workspace <worktree> --add-dir <control-dir> --model cursor-grok-4.6-high <packet>
-```
-
-If `pi` or `codex` returns a usage-limit, no-credits, or billing error for GPT/Codex, do not stop. Resolve the current Cursor Grok 4.6 id from `cursor-agent --list-models` and continue on that runner. `pi --model cursor/grok-4.6` is not a working host path; Cursor Grok is `cursor-agent`.
-
-Confirm that the chosen runtime can see the Matt skills and create subagents. A Herdr terminal wrapped around a resumed agent is still a resumed context.
-
-## Pi print mode
-
-Run Pi from the assigned worktree. Load the user-only skills explicitly and start with `/skill:implement`:
-
-```text
-pi -p --no-session --model <approved-pi-model> \
-  --skill <agents-skills>/implement \
-  --skill <agents-skills>/tdd \
-  --skill <agents-skills>/code-review \
-  @<implementation-packet.md>
-```
-
-Pi qualifies for implementation only when an installed extension supplies the subagent support required by the nested `/code-review`. If that gate fails, select a capable Herdr or native lane; the nested review remains part of `/implement`.
+The probe passes only when the model resolves from house rules (or an approved override) and appears in the host catalog, all three skills resolve, both subagents return the expected HEAD from distinct contexts, the control directory is readable, and independent inspection confirms unchanged HEAD and a clean worktree.
 
 ## Implementation or fix packet
 
@@ -154,4 +135,4 @@ index that preserves each finding's axis and evidence.
 
 ## Coordinator rollover packet
 
-To continue orchestration in a fresh coordinator, pass only the PRD ref, ledger and manifest paths, repository/worktree, integration branch, pinned base SHA, PR URL if created, completed review-cycle count, and the next frontier. Reconstruct everything else from the tracker, Git, and the ledger.
+The first line explicitly invokes `orchestrate-prd` with the PRD ref, using the runner's prefix. Then pass only the PRD ref, ledger and manifest paths, host, house-rules path, repository/worktree, integration branch, pinned base SHA, PR URL if created, completed review-cycle count, and the next frontier. Reconstruct everything else from the tracker, Git, and the ledger.

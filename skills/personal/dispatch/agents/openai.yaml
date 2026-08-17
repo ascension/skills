@@ -1,0 +1,3 @@
+interface:
+  display_name: "Dispatch"
+  short_description: "Same-host spawn through the current adapter"

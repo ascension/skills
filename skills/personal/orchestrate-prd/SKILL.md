@@ -7,7 +7,9 @@ disable-model-invocation: true
 
 # PRD Relay
 
-This is the AFK continuation of Ask Matt's multi-session flow after `/to-tickets`. A **relay leg** is one task in one fresh process or agent context. The coordinator keeps the ledger; each worker receives one small task packet.
+This is the AFK continuation of Ask Matt's multi-session flow after `/to-tickets`. A **relay leg** is one task in one **fresh session**. The coordinator keeps the ledger; each worker receives one small task packet.
+
+This skill is the **control plane**. Every **spawn intent** is delivered by calling the Skill tool with "dispatch". Terms: [CONTEXT.md](CONTEXT.md).
 
 This skill owns orchestration only. The PRD and tickets own requirements, `/implement` owns ticket work, and `/code-review` owns the Standards and Spec review axes.
 
@@ -16,20 +18,22 @@ This skill owns orchestration only. The PRD and tickets own requirements, `/impl
 1. Read `docs/agents/issue-tracker.md`. If it is absent, stop and ask the user to run `/setup-matt-pocock-skills`.
 2. Resolve the PRD, all linked descendant tickets and comments, the integration branch, target base, immutable starting base SHA, and the repository's integration-verification commands. Require a clean integration worktree; isolate or stop on unrelated pre-existing changes.
 3. Map every in-scope PRD requirement to an approved ticket, including user-supplied missing or incomplete work. If publishing new tickets still needs approval, stop at `/to-tickets`; resume only with an approved dependency graph.
-4. Create an orchestration ledger in the OS temporary directory, outside the PR diff. For each task record its source ref, concise acceptance criteria, blockers, status, starting SHA, commits, checks, and criterion evidence. Store raw worker logs beside the ledger, not in coordinator context.
+4. Create an orchestration ledger in the OS temporary directory, outside the PR diff. For each task record its source ref, **role**, model, **effort**, concise acceptance criteria, blockers, status, starting SHA, commits, checks, and criterion evidence. Store raw worker logs beside the ledger, not in coordinator context.
 5. Create a review-spec manifest beside the ledger. It is an index of the parent PRD, every in-scope ticket and acceptance criterion, accepted scope changes, and out-of-scope decisions. Use source links rather than copied issue bodies.
+6. Load **house rules**. Read [HOUSE-RULES.md](HOUSE-RULES.md) for the file and resolution order. If the file is missing, stop and ask.
+7. Resolve each ledger row from ticket annotation, else house rules for that role. Raise **suggestions** for tickets that warrant a different model. Wait for approval or decline. Write approved overrides on the ledger. After this step, stay AFK: effort is the remaining knob; model stays on the row.
 
-The control plane is pinned when the base and starting SHA, integration commands, and clean worktree are verified; the ledger and review-spec manifest are populated; every requirement has a task with explicit blocking edges; and the initial frontier is known.
+The control plane is pinned when the base and starting SHA, integration commands, and clean worktree are verified; the ledger and review-spec manifest are populated; every requirement has a task with explicit blocking edges; the initial frontier is known; house rules are loaded; every ledger row has a role, model, and effort; and every suggestion is approved or declined.
 
 ## 2. Open the relay
 
-Read the capability gate, selected launcher, and current packet section in [FRESH-SESSIONS.md](FRESH-SESSIONS.md).
+Read the capability gate, spawn intent, and probe packet in [FRESH-SESSIONS.md](FRESH-SESSIONS.md). Call the Skill tool with "dispatch" and a probe spawn intent (`role: probe`) that includes the PRD `issue`, integration `branch`, short `work` title, and `cwd`. Name `adapter` only when the user pinned one.
 
-Dispatch every implementation, recovery, verification, review, and fix relay leg under that reference's capability gate.
+When this coordinator session approaches the [smart zone](https://www.aihero.dev/ai-coding-dictionary/smart-zone) (~150k), Call the Skill tool with "dispatch" and a `role: rollover` intent carrying the coordinator rollover packet, then stop.
 
 Pass pointers plus the active task's criteria; let the worker fetch primary sources. Keep only its compact receipt in coordinator context. The ledger, tracker, and Git history are sufficient to roll the coordinator into a fresh session at any phase boundary.
 
-The relay is open when the read-only capability probe passes without changing HEAD or the worktree, and its exact runner and model are recorded.
+The relay is open when the read-only capability probe passes without changing HEAD or the worktree, and the host, runner, and resolved model are recorded.
 
 ## 3. Run implementation legs
 
@@ -37,12 +41,12 @@ Work the dependency frontier with one mutating worker at a time on the integrati
 
 For each ready ticket:
 
-1. Record `TICKET_BASE_SHA`, inspect the installed `/implement` and `/code-review` ordering as directed by `FRESH-SESSIONS.md`, then dispatch a fresh session that explicitly enters `/implement` with the ticket ref and implementation packet.
+1. Record `TICKET_BASE_SHA`, inspect the installed `/implement` and `/code-review` ordering as directed by `FRESH-SESSIONS.md`, then dispatch a spawn intent (`role: implement`) with the ticket ref and implementation packet. Set **effort** for this handoff. Use the ledger row's model.
 2. Accept the receipt only after independently verifying that observed integration `HEAD` equals reported `HEAD`, `TICKET_BASE_SHA` is its ancestor, every commit and diff in `TICKET_BASE_SHA..HEAD` is reported and task-scoped, the worktree is clean, every criterion has evidence, and required checks passed.
-3. Record newly discovered scope as a separate ticket with blocking edges. Keep the active worker on its original acceptance criteria.
-4. Treat runner failures as recovery tasks and dispatch them fresh with the recovery packet.
+3. Record newly discovered scope as a separate ticket with blocking edges. Keep the active worker on its original acceptance criteria. New tickets take the implement role's house-rules model; raise no mid-run suggestion.
+4. Treat runner failures as recovery tasks and dispatch them fresh (`role: recover`) with the recovery packet.
 
-After every ledger task is evidenced and the integration branch is clean, run the pinned integration commands with the verification packet. Turn a code failure into a fresh `/implement` fix leg and re-run verification. Implementation is complete only when the final verification leg is green at the expected HEAD.
+After every ledger task is evidenced and the integration branch is clean, run the pinned integration commands with the verification packet (`role: verify`). Turn a code failure into a fresh `/implement` fix leg and re-run verification. Implementation is complete only when the final verification leg is green at the expected HEAD.
 
 ## 4. Publish the PR
 
@@ -56,17 +60,17 @@ Pin the PR merge-base SHA once. A cycle is one valid aggregate `/code-review` re
 
 For each cycle:
 
-1. Record `EXPECTED_HEAD`, then start a fresh review session. Explicitly invoke `/code-review <PINNED_BASE_SHA>` and pass the PR plus the review-spec manifest as the composite spec source. Prefer a different approved model family from implementation when available.
+1. Record `EXPECTED_HEAD`, then dispatch a spawn intent (`role: review`). Explicitly invoke `/code-review <PINNED_BASE_SHA>` and pass the PR plus the review-spec manifest as the composite spec source. Use the review role's model from house rules or an approved override.
 2. Accept only a valid two-axis report whose `REVIEWED HEAD` equals `EXPECTED_HEAD` and whose source receipt accounts for every manifest entry. Preserve Standards and Spec as separate axes. Give each finding a ledger row and close it only as `fixed` or `non-actionable`, with evidence.
 3. If no actionable findings remain and integration verification passes, mark the draft PR ready, record `review-clean`, and stop.
-4. Convert coherent findings into fix tasks. Run every fix through `/implement` in a fresh session, verify its commits, run a fresh integration-verification leg, and push the same PR. When the cycle number is below 5, start the next cycle from the original pinned SHA.
+4. Convert coherent findings into fix tasks. Run every fix through `/implement` in a fresh session (`role: implement`), verify its commits, run a fresh integration-verification leg, and push the same PR. When the cycle number is below 5, start the next cycle from the original pinned SHA.
 
 A failed dispatch with no valid two-axis report does not consume a cycle. If cycle 5 finds issues, fix them, require green integration verification, push, then stop as `cap-reached/unconfirmed`: a sixth review would be required to prove the final fixes review-clean.
 
 ## Failure bounds
 
-Each relay leg gets one initial attempt and at most one fresh recovery attempt. Reconcile and verify any partial Git state before retrying. A verification failure caused by code becomes one bounded fix task followed by one new verification leg; another red result is `blocked`. Stop as `blocked` on a second failure, a non-recoverable capability or credential failure, uncertain Git state, or a required user decision. A review dispatch retry does not consume a cycle; a second invalid report is `blocked`.
+Each relay leg gets one initial attempt and at most one fresh recovery attempt. Reconcile and verify any partial Git state before retrying. A verification failure caused by code becomes one bounded fix task followed by one new verification leg; another red result is `blocked`. Stop as `blocked` on a second failure, a non-recoverable capability or credential failure, a model the adapter cannot resolve or run, uncertain Git state, or a required user decision (missing house rules, host pin, unanswered suggestions). A review dispatch retry does not consume a cycle; a second invalid report is `blocked`.
 
 ## Completion report
 
-Report the PR URL, base and head SHAs, completed and blocked tasks, integration checks, review-cycle count, Standards and Spec dispositions, and exactly one result: `review-clean`, `cap-reached/unconfirmed`, or `blocked`. Only `review-clean` is successful completion.
+Report the PR URL, base and head SHAs, host, role-to-model map used, completed and blocked tasks, integration checks, review-cycle count, Standards and Spec dispositions, and exactly one result: `review-clean`, `cap-reached/unconfirmed`, or `blocked`. Only `review-clean` is successful completion.

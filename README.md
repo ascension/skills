@@ -185,7 +185,7 @@ And crucially, [`/improve-codebase-architecture`](./skills/engineering/improve-c
 
 **The Problem**: You correct the agent, and next session it makes the same mistake again. The knowledge lives in your head — or in one long-gone conversation — so you pay for it in tokens and corrections every single time. The best engineers have always fixed this class of problem with automation: lint rules, tests, CI. Agents raise the stakes twice over — every rule you encode speeds up every future session, and the knowledge that can now be encoded goes beyond lint rules and types to CLAUDE.md rules, REVIEW.md checklists, and skills.
 
-**The Fix**: [`/ratchet`](./skills/engineering/ratchet/SKILL.md). When the same fix, correction, or busywork shows up twice, it encodes the whole class as infrastructure — a type, lint rule, test, CI check, hook, or a CLAUDE.md/REVIEW.md rule co-located with the code it governs — then proves the mechanism catches the original mistake. A ratchet turns one way: once it clicks, that class of issue can never come back. It can also audit an area for documentation gaps until an agent could work there with zero additional context.
+**The Fix**: after you ship, [`/retro`](./skills/engineering/retro/SKILL.md) looks back at the session and the PR for every **stop** — a question the agent asked, a correction it received, a human review comment — and encodes each class at the highest rung that holds it (architecture, then a lint or test, then a skill or rule; human review is a source of feedback to promote, not a destination). When you already know the class, [`/ratchet`](./skills/engineering/ratchet/SKILL.md) encodes it as infrastructure — a type, lint rule, test, CI check, hook, or a CLAUDE.md/REVIEW.md rule co-located with the code it governs — then proves the mechanism catches the original mistake. A ratchet turns one way: once it clicks, that class of issue can never come back. It can also audit an area for documentation gaps until an agent could work there with zero additional context.
 
 ### Summary
 
@@ -209,6 +209,7 @@ Skills I use daily for code work.
 - **[to-spec](./skills/engineering/to-spec/SKILL.md)** — Turn the current conversation into a spec and publish it to the issue tracker. No interview — just synthesizes what you've already discussed.
 - **[to-tickets](./skills/engineering/to-tickets/SKILL.md)** — Break any plan, spec, or conversation into a set of tracer-bullet tickets, each declaring its blocking edges — written as text in a local file, or as native blocking links on a real tracker.
 - **[implement](./skills/engineering/implement/SKILL.md)** — Build the work described by a spec or set of tickets, driving `/tdd` at pre-agreed seams and closing out with `/code-review` before committing.
+- **[retro](./skills/engineering/retro/SKILL.md)** — After a session that shipped or opened a PR, find every stop (a question, a correction, a pause, missing-repo context, a human review comment) and encode the class so the next agent works through that constraint without interruption.
 - **[wayfinder](./skills/engineering/wayfinder/SKILL.md)** — Plan a huge chunk of work, more than one agent session can hold, as a shared map of decision tickets on the issue tracker — resolve them one at a time until the way to the destination is clear.
 
 **Model-invoked**
